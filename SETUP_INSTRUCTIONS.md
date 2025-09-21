@@ -47,18 +47,19 @@ Open the printed https://trycloudflare.com URL on your phone.
 - **Email**: admin@quikattend.com
 - **Password**: admin123
 
-### Teacher Account  
+### Teacher Accounts  
 - **Email**: john.smith@quikattend.com
 - **Password**: admin123
-
-### Student Account
-- **Email**: alice.brown@student.com  
+- **Email**: sarah.johnson@quikattend.com
 - **Password**: admin123
 
-### Additional Demo Accounts (if seeded)
-- Teacher: priya.kapoor@quikattend.com / admin123
-- Student: rahul.sharma@student.com / admin123
-- Student: emma.wilson@student.com / admin123
+### Student Accounts
+- **Email**: alice.brown@student.com  
+- **Password**: admin123
+- **Email**: bob.wilson@student.com
+- **Password**: admin123
+- **Email**: carol.davis@student.com
+- **Password**: admin123
 
 ## Database Management
 

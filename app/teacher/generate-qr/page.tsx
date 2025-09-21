@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, RefreshCw, Users } from "lucide-react"
+import { ArrowLeft, Users } from "lucide-react"
 import Link from "next/link"
 
 export default function GenerateQR() {
@@ -21,31 +21,21 @@ export default function GenerateQR() {
   const [branch, setBranch] = useState("")
   const [qrCode, setQrCode] = useState("")
   const [classId, setClassId] = useState("")
-  const [timeLeft, setTimeLeft] = useState(0)
   const [attendanceCount, setAttendanceCount] = useState({ present: 0, total: 0 })
   const [error, setError] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isQRActive, setIsQRActive] = useState(false)
 
   useEffect(() => {
     let interval: NodeJS.Timeout
-    if (timeLeft > 0) {
+    if (isQRActive && classId) {
+      // Update live count every 5 seconds
       interval = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            // QR expired, fetch final attendance count
-            fetchAttendanceCount()
-            return 0
-          }
-          return prev - 1
-        })
-        // Also update live count every 5 seconds
-        if (timeLeft % 5 === 0) {
-          fetchAttendanceCount()
-        }
-      }, 1000)
+        fetchAttendanceCount()
+      }, 5000)
     }
     return () => clearInterval(interval)
-  }, [timeLeft, classId])
+  }, [isQRActive, classId])
 
   const fetchAttendanceCount = async () => {
     if (!classId) return
@@ -86,7 +76,7 @@ export default function GenerateQR() {
 
       setQrCode(data.qrCode)
       setClassId(data.classId)
-      setTimeLeft(60) // 60 seconds
+      setIsQRActive(true)
       setAttendanceCount({ present: 0, total: data.totalStudents })
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
@@ -95,17 +85,24 @@ export default function GenerateQR() {
     }
   }
 
-  const handleRegenerateQR = () => {
-    setQrCode("")
-    setClassId("")
-    setTimeLeft(0)
-    setAttendanceCount({ present: 0, total: 0 })
-  }
+  const handleStopQR = async () => {
+    if (!classId) return
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, "0")}`
+    try {
+      const response = await fetch(`/api/teacher/stop-qr/${classId}`, {
+        method: "POST",
+      })
+
+      if (response.ok) {
+        setIsQRActive(false)
+        // Fetch final attendance count
+        await fetchAttendanceCount()
+      } else {
+        setError("Failed to stop QR code")
+      }
+    } catch (err) {
+      setError("Error stopping QR code")
+    }
   }
 
   return (
@@ -207,7 +204,7 @@ export default function GenerateQR() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-center space-y-4">
-                  {timeLeft > 0 ? (
+                  {isQRActive ? (
                     <>
                       <div className="flex justify-center">
                         <div className="bg-white p-4 rounded-lg border shadow-lg">
@@ -215,28 +212,40 @@ export default function GenerateQR() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <div className="text-3xl font-bold text-primary">{formatTime(timeLeft)}</div>
-                        <p className="text-muted-foreground">Time remaining</p>
+                        <div className="text-2xl font-bold text-green-600">QR Code Active</div>
+                        <p className="text-muted-foreground">Students can scan this QR code to mark their attendance</p>
                       </div>
                       <Alert>
                         <AlertDescription>
-                          Students can scan this QR code to mark their attendance. The code will expire automatically.
+                          Click "Stop QR" when you want to end the attendance session.
                         </AlertDescription>
                       </Alert>
+                      <div className="flex gap-4 justify-center">
+                        <Button onClick={handleStopQR} variant="destructive">
+                          Stop QR
+                        </Button>
+                        <Link href="/teacher">
+                          <Button variant="outline">Back to Dashboard</Button>
+                        </Link>
+                      </div>
                     </>
                   ) : (
                     <>
-                      <div className="text-xl font-semibold text-muted-foreground">QR Code Expired</div>
+                      <div className="text-xl font-semibold text-muted-foreground">QR Code Stopped</div>
                       <div className="text-lg">
                         Final Attendance: <span className="font-bold text-primary">{attendanceCount.present}</span>/
                         <span className="font-bold">{attendanceCount.total}</span> students present
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Absent students have been automatically marked. Class is now complete.
+                        Attendance session has been completed.
                       </p>
                       <div className="flex gap-4 justify-center">
-                        <Button onClick={handleRegenerateQR}>
-                          <RefreshCw className="h-4 w-4 mr-2" />
+                        <Button onClick={() => {
+                          setQrCode("")
+                          setClassId("")
+                          setIsQRActive(false)
+                          setAttendanceCount({ present: 0, total: 0 })
+                        }}>
                           Generate New QR
                         </Button>
                         <Link href="/teacher">
@@ -248,7 +257,7 @@ export default function GenerateQR() {
                 </CardContent>
               </Card>
 
-              {timeLeft > 0 && (
+              {isQRActive && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { parseQRCodeData, isQRCodeExpired } from "@/lib/qr-utils"
+import { parseQRCodeData } from "@/lib/qr-utils"
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,12 +16,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid QR code format" }, { status: 400 })
     }
 
-    const { classId, timestamp, teacherId } = parsedData
-
-    // Check if QR code is expired
-    if (isQRCodeExpired(timestamp)) {
-      return NextResponse.json({ error: "QR code has expired" }, { status: 400 })
-    }
+    const { classId, teacherId } = parsedData
 
     // Find the class and verify it's active
     const classRecord = await prisma.class.findUnique({

@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     })
 
     const now = new Date()
-    const qrExpiry = new Date(now.getTime() + 60 * 1000) // 60 seconds from now
+    // No automatic expiry - QR will be active until manually stopped
 
     // Create or update class record
     const classRecord = await prisma.class.upsert({
@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
       },
       update: {
         subject,
-        qrExpiry,
         status: "ACTIVE",
       },
       create: {
@@ -51,7 +50,6 @@ export async function POST(request: NextRequest) {
         branch,
         timeslotId: timeslot.id,
         date: new Date(now.toDateString()),
-        qrExpiry,
         status: "ACTIVE",
       },
     })
@@ -72,21 +70,10 @@ export async function POST(request: NextRequest) {
       data: { qrCode: JSON.stringify(qrData) },
     })
 
-    // Schedule automatic absent marking after QR expires
-    setTimeout(async () => {
-      try {
-        const { markAbsentStudents } = await import("@/lib/attendance-utils")
-        await markAbsentStudents(classRecord.id)
-      } catch (error) {
-        console.error("Error auto-marking absent students:", error)
-      }
-    }, 60 * 1000) // 60 seconds
-
     return NextResponse.json({
       qrCode: qrCodeImage,
       classId: classRecord.id,
       totalStudents,
-      expiryTime: qrExpiry.toISOString(),
     })
   } catch (error) {
     console.error("Error generating QR code:", error)
