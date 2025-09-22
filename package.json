@@ -5,9 +5,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/QuikAttend.git"
+    "url": "https://github.com/iEatPoha/QuikAttend.git"
   },
-  "author": "Your Name",
+  "author": "iEatPoha",
   "engines": {
     "node": ">=18"
   },
@@ -16,6 +16,9 @@
     "dev": "next dev -H 0.0.0.0",
     "lint": "next lint",
     "start": "next start"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -61,7 +64,7 @@
     "lucide-react": "^0.454.0",
     "next": "15.2.4",
     "next-themes": "^0.4.6",
-    "prisma": "latest",
+    "prisma": "^6.16.2",
     "qrcode": "latest",
     "react": "^19",
     "react-day-picker": "9.8.0",
